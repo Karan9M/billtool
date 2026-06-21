@@ -11,9 +11,11 @@ import {
   Receipt,
   ChevronDown,
   ChevronUp,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFinancialYear } from "@/lib/invoice-utils";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +28,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const fy = getFinancialYear();
   const [showFy, setShowFy] = useState(false);
+  const { user } = useAuth();
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -77,11 +80,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <button
         onClick={() => setShowFy((v) => !v)}
-        className="mx-3 mb-2 flex items-center justify-between rounded-lg border border-sidebar-border/50 px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent/50"
+        className="mx-3 mb-1 flex items-center justify-between rounded-lg border border-sidebar-border/50 px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent/50"
       >
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
-            FY {fy}
+            Financial Year
           </div>
           <div className="mt-0.5 font-mono text-[11px] text-sidebar-foreground/60">
             {fy}
@@ -94,14 +97,38 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </button>
 
-      <div className="border-t border-sidebar-border p-4 pt-3">
-        <div className="flex items-center gap-2">
-          <div className="size-1.5 rounded-full bg-green-500" />
-          <span className="text-[11px] text-sidebar-foreground/40">
-            SAI Communication System
-          </span>
+      {user && (
+        <div className="border-t border-sidebar-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            {user.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt=""
+                className="size-8 rounded-full ring-2 ring-sidebar-border"
+              />
+            ) : (
+              <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-primary/30 text-xs font-bold text-sidebar-foreground">
+                {(user.email?.[0] || "?").toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-medium text-sidebar-foreground">
+                {user.user_metadata?.full_name || user.email?.split("@")[0] || "User"}
+              </div>
+              <div className="truncate text-[10px] text-sidebar-foreground/40">
+                {user.email}
+              </div>
+            </div>
+            <a
+              href="/auth/signout"
+              className="flex size-7 items-center justify-center rounded-md text-sidebar-foreground/40 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              title="Sign out"
+            >
+              <LogOut className="size-3.5" />
+            </a>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

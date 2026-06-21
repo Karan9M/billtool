@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { AppShell } from "@/components/layout/AppShell";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 
 const outfit = Outfit({
@@ -55,7 +55,9 @@ export default function RootLayout({
     >
       <head />
       <body className="min-h-full bg-background text-foreground">
-        <AppShell>{children}</AppShell>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Toaster richColors position="top-right" closeButton />
       </body>
     </html>
