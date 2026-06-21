@@ -1,27 +1,50 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
-import { useSearchParams } from "next/navigation";
-import { LogIn, Receipt } from "lucide-react";
+import { Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function LoginForm() {
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
-  async function signInWithGoogle() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
     setBusy(true);
+
     const sb = getSupabaseBrowser();
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
-      },
-    });
-    if (error) {
-      console.error(error);
+
+    if (mode === "signin") {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+        setBusy(false);
+        return;
+      }
+      router.push(redirect);
+      router.refresh();
+    } else {
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+        setBusy(false);
+        return;
+      }
+      setMode("signin");
+      setError("");
+      setPassword("");
       setBusy(false);
     }
   }
@@ -41,17 +64,91 @@ function LoginForm() {
           </p>
         </div>
 
-        <Button
-          onClick={signInWithGoogle}
-          disabled={busy}
-          className="w-full h-11 gap-3 text-sm font-medium shadow-xs"
-        >
-          <LogIn className="size-5" />
-          {busy ? "Redirecting..." : "Sign in with Google"}
-        </Button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs text-muted-foreground font-medium">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="h-10 bg-background"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs text-muted-foreground font-medium">
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              className="h-10 bg-background"
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-destructive font-medium">{error}</p>
+          )}
+
+          {mode === "signup" && (
+            <p className="text-xs text-muted-foreground">
+              A confirmation email will be sent. Check your inbox.
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            disabled={busy || !email || !password}
+            className="w-full h-11 text-sm font-medium shadow-xs"
+          >
+            {busy ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                {mode === "signin" ? "Signing in..." : "Creating account..."}
+              </>
+            ) : mode === "signin" ? (
+              "Sign In"
+            ) : (
+              "Create Account"
+            )}
+          </Button>
+        </form>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          GST-compliant invoicing for SAI Communication System
+          {mode === "signin" ? (
+            <>
+              No account?{" "}
+              <button
+                type="button"
+                onClick={() => { setMode("signup"); setError(""); }}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={() => { setMode("signin"); setError(""); }}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign In
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
