@@ -28,9 +28,9 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl p-4 md:p-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Configure your company, banking, invoice numbering and branding.
         </p>
       </header>

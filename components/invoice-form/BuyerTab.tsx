@@ -14,9 +14,11 @@ export function BuyerTab({
   const errors = formState.errors;
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Invoice</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground">
+            Invoice
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <FormField
@@ -44,9 +46,11 @@ export function BuyerTab({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Buyer Details</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground">
+            Buyer Details
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <FormField

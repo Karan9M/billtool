@@ -64,29 +64,35 @@ export function ItemsTab({ form, itemsField }: Props) {
 
   return (
     <div className="space-y-3">
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         {fields.map((f, i) => {
           const amount = items?.[i]?.amount ?? 0;
           return (
             <motion.div
               key={f.id}
               layout
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ duration: 0.18 }}
             >
-              <Card>
-                <CardContent className="space-y-3 p-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      Item #{i + 1}
-                    </span>
+              <Card className="border-0 bg-card shadow-sm">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-md bg-primary/5 font-mono text-[10px] font-bold text-primary">
+                        {i + 1}
+                      </span>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Line Item
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button type="button" size="xs" variant="outline">
-                            <Sparkles className="size-3" /> Quick Fill
+                          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                            <Sparkles className="size-3" />
+                            Quick Fill
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-64">
@@ -94,25 +100,24 @@ export function ItemsTab({ form, itemsField }: Props) {
                             <DropdownMenuItem
                               key={p.label}
                               onClick={() => applyQuickFill(i, p.label)}
+                              className="flex-col items-start py-2"
                             >
-                              <div className="flex flex-col">
-                                <span className="text-sm">{p.label}</span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  HSN {p.hsn_code} · ₹
-                                  {formatCurrencyPlain(p.default_rate)}
-                                </span>
-                              </div>
+                              <span className="text-sm font-medium">{p.label}</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                HSN {p.hsn_code} &middot; ₹{formatCurrencyPlain(p.default_rate)}
+                              </span>
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                       <Button
                         type="button"
-                        size="icon-sm"
+                        size="sm"
                         variant="ghost"
                         onClick={() => fields.length > 1 && remove(i)}
                         disabled={fields.length <= 1}
                         aria-label="Remove item"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -120,34 +125,32 @@ export function ItemsTab({ form, itemsField }: Props) {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor={`items.${i}.description`}>
-                      Description
-                    </Label>
+                    <Label className="text-xs text-muted-foreground">Description *</Label>
                     <Input
-                      id={`items.${i}.description`}
-                      className="h-10"
+                      className="h-9 text-sm"
                       {...register(`items.${i}.description` as const)}
+                      placeholder="Item description"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1.5">
-                      <Label htmlFor={`items.${i}.hsn_code`}>HSN/SAC</Label>
+                      <Label className="text-xs text-muted-foreground">HSN/SAC</Label>
                       <Input
-                        id={`items.${i}.hsn_code`}
-                        className="h-10 font-mono"
+                        className="h-9 font-mono text-sm"
                         {...register(`items.${i}.hsn_code` as const)}
+                        placeholder="HSN"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Unit</Label>
+                      <Label className="text-xs text-muted-foreground">Unit</Label>
                       <Select
                         value={watch(`items.${i}.unit`) || "Nos"}
                         onValueChange={(v) =>
                           setValue(`items.${i}.unit`, v, { shouldDirty: true })
                         }
                       >
-                        <SelectTrigger className="h-10 w-full">
+                        <SelectTrigger className="h-9 w-full">
                           <SelectValue placeholder="Unit" />
                         </SelectTrigger>
                         <SelectContent>
@@ -163,34 +166,32 @@ export function ItemsTab({ form, itemsField }: Props) {
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1.5">
-                      <Label htmlFor={`items.${i}.quantity`}>Qty</Label>
+                      <Label className="text-xs text-muted-foreground">Qty</Label>
                       <Input
-                        id={`items.${i}.quantity`}
                         type="number"
                         step="0.01"
                         min="0"
-                        className="h-10"
+                        className="h-9 text-sm"
                         {...register(`items.${i}.quantity` as const, {
                           valueAsNumber: true,
                         })}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`items.${i}.rate`}>Rate (₹)</Label>
+                      <Label className="text-xs text-muted-foreground">Rate (₹)</Label>
                       <Input
-                        id={`items.${i}.rate`}
                         type="number"
                         step="0.01"
                         min="0"
-                        className="h-10"
+                        className="h-9 text-sm"
                         {...register(`items.${i}.rate` as const, {
                           valueAsNumber: true,
                         })}
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Amount</Label>
-                      <div className="flex h-10 items-center justify-end rounded-lg border bg-muted/40 px-2.5 font-mono text-sm">
+                      <Label className="text-xs text-muted-foreground">Amount</Label>
+                      <div className="flex h-9 items-center justify-end rounded-lg border bg-muted/30 px-2.5 font-mono text-sm font-medium text-foreground">
                         ₹{formatCurrencyPlain(Number(amount || 0))}
                       </div>
                     </div>
@@ -205,9 +206,8 @@ export function ItemsTab({ form, itemsField }: Props) {
       <Button
         type="button"
         variant="outline"
-        size="lg"
         onClick={addEmpty}
-        className="w-full"
+        className="w-full gap-2 border-dashed text-sm font-medium"
       >
         <Plus className="size-4" />
         Add Item

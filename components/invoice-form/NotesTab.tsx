@@ -13,9 +13,11 @@ export function NotesTab({
   const { register, formState } = form;
   const errors = formState.errors;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Notes & Delivery</CardTitle>
+    <Card className="border-0 bg-card shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-bold text-foreground">
+          Notes & Delivery
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <FormTextArea

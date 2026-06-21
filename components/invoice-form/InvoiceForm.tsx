@@ -9,10 +9,11 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  CircleDot,
   Eye,
   PenSquare,
   Save,
+  ChevronRight,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,7 +51,8 @@ export function InvoiceForm({
   const [tab, setTab] = useState("buyer");
   const [mobilePane, setMobilePane] = useState<"form" | "preview">("form");
   const [submitting, setSubmitting] = useState(false);
-  const [manuallyCachedPreview, setManuallyCachedPreview] = useState<InvoiceFormInput | null>(null);
+  const [manuallyCachedPreview, setManuallyCachedPreview] =
+    useState<InvoiceFormInput | null>(null);
 
   const form = useForm<InvoiceFormInput>({
     resolver: zodResolver(invoiceFormSchema),
@@ -85,10 +87,8 @@ export function InvoiceForm({
   });
 
   const itemsField = useFieldArray({ control: form.control, name: "items" });
-
   const watched = form.watch();
 
-  // Recompute item amounts whenever quantity/rate changes
   useEffect(() => {
     const sub = form.watch((value, info) => {
       if (!info.name) return;
@@ -110,7 +110,6 @@ export function InvoiceForm({
     return () => sub.unsubscribe();
   }, [form]);
 
-  // Manual preview - only update when user clicks "Update Preview" button
   const previewData = useMemo(() => {
     const source = manuallyCachedPreview || watched;
     const items = (source.items || []).map((it) => ({
@@ -167,22 +166,31 @@ export function InvoiceForm({
     }
   }
 
+  const TABS = [
+    { value: "buyer", label: "Buyer" },
+    { value: "items", label: "Items" },
+    { value: "tax", label: "Tax" },
+    { value: "notes", label: "Notes" },
+  ];
+
+  const currentTabIndex = TABS.findIndex((t) => t.value === tab);
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col md:h-screen">
       {/* Top bar */}
-      <header className="flex flex-shrink-0 items-center justify-between gap-3 border-b bg-background px-4 py-3 md:px-6">
-        <div className="flex items-center gap-3">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-background/80 px-4 py-3 backdrop-blur-md md:px-6">
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/invoices"
-            className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted"
+            className="inline-flex size-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
           >
             <ArrowLeft className="size-4" />
           </Link>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-base font-bold leading-tight text-foreground">
               New Invoice
             </h1>
-            <p className="font-mono text-xs text-muted-foreground">
+            <p className="font-mono text-xs text-muted-foreground truncate">
               {watched.invoice_no || proposedNumber}
             </p>
           </div>
@@ -193,7 +201,9 @@ export function InvoiceForm({
             variant="outline"
             onClick={() => setManuallyCachedPreview(watched)}
             size="sm"
+            className="hidden md:inline-flex h-9 text-xs"
           >
+            <Eye className="size-3.5" />
             Update Preview
           </Button>
           <DownloadButton data={previewData} company={company} />
@@ -201,31 +211,33 @@ export function InvoiceForm({
             type="button"
             onClick={form.handleSubmit(onSubmit)}
             disabled={submitting}
-            size="lg"
+            className="shadow-xs"
           >
             <Save className="size-4" />
-            {submitting ? "Saving…" : "Save"}
+            {submitting ? "Saving..." : "Save"}
           </Button>
         </div>
       </header>
 
       {/* Mobile pane toggle */}
-      <div className="flex flex-shrink-0 items-center justify-center gap-1 border-b bg-muted/30 p-2 md:hidden">
+      <div className="flex shrink-0 items-center justify-center gap-1 border-b bg-muted/30 px-4 py-2 md:hidden">
         <Button
           type="button"
           size="sm"
           variant={mobilePane === "form" ? "default" : "ghost"}
           onClick={() => setMobilePane("form")}
+          className="h-8 text-xs"
         >
-          <PenSquare className="size-4" /> Form
+          <PenSquare className="size-3.5" /> Form
         </Button>
         <Button
           type="button"
           size="sm"
           variant={mobilePane === "preview" ? "default" : "ghost"}
           onClick={() => setMobilePane("preview")}
+          className="h-8 text-xs"
         >
-          <Eye className="size-4" /> Preview
+          <Eye className="size-3.5" /> Preview
         </Button>
       </div>
 
@@ -234,8 +246,8 @@ export function InvoiceForm({
         <motion.section
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.25 }}
-          className={`flex min-h-0 w-full flex-col overflow-y-auto border-r md:w-[420px] md:flex-shrink-0 ${
+          transition={{ duration: 0.2 }}
+          className={`flex min-h-0 w-full flex-col overflow-y-auto border-r md:w-[440px] md:shrink-0 ${
             mobilePane === "form" ? "block" : "hidden md:flex"
           }`}
         >
@@ -248,12 +260,17 @@ export function InvoiceForm({
               onValueChange={setTab}
               className="flex flex-1 flex-col"
             >
-              <div className="border-b bg-background px-3 pt-3">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="buyer">Buyer</TabsTrigger>
-                  <TabsTrigger value="items">Items</TabsTrigger>
-                  <TabsTrigger value="tax">Tax</TabsTrigger>
-                  <TabsTrigger value="notes">Notes</TabsTrigger>
+              <div className="border-b bg-background px-4 pt-3">
+                <TabsList className="grid w-full grid-cols-4 gap-1">
+                  {TABS.map((t, i) => (
+                    <TabsTrigger
+                      key={t.value}
+                      value={t.value}
+                      className="relative text-xs data-[state=active]:font-semibold"
+                    >
+                      {t.label}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
               </div>
               <div className="flex-1 overflow-y-auto p-4">
@@ -278,6 +295,42 @@ export function InvoiceForm({
                 </TabsContent>
               </div>
             </Tabs>
+
+            {/* Tab navigation */}
+            <div className="flex shrink-0 items-center justify-between border-t bg-background px-4 py-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={currentTabIndex === 0}
+                onClick={() => setTab(TABS[currentTabIndex - 1]?.value || "buyer")}
+                className="text-xs"
+              >
+                Previous
+              </Button>
+              {currentTabIndex < TABS.length - 1 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setTab(TABS[currentTabIndex + 1]?.value || "notes")}
+                  className="text-xs"
+                >
+                  Next
+                  <ChevronRight className="size-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={form.handleSubmit(onSubmit)}
+                  disabled={submitting}
+                  className="text-xs"
+                >
+                  <Save className="size-3.5" />
+                  {submitting ? "Saving..." : "Save Invoice"}
+                </Button>
+              )}
+            </div>
           </form>
         </motion.section>
 
@@ -285,15 +338,28 @@ export function InvoiceForm({
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          className={`flex min-h-0 flex-1 flex-col bg-muted/20 ${
+          transition={{ duration: 0.25, delay: 0.05 }}
+          className={`flex min-h-0 flex-1 flex-col bg-muted/30 ${
             mobilePane === "preview" ? "flex" : "hidden md:flex"
           }`}
         >
-          <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 py-2 backdrop-blur">
-            <div className="text-xs text-muted-foreground">
-              Preview · A4
+          <div className="flex shrink-0 items-center justify-between border-b bg-background/80 px-4 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <FileText className="size-3.5" />
+              A4 Preview
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setManuallyCachedPreview(watched);
+              }}
+              className="md:hidden h-8 text-xs"
+            >
+              <Eye className="size-3.5" />
+              Refresh
+            </Button>
           </div>
           <div className="min-h-0 flex-1 p-2 md:p-4">
             <LivePreview data={previewData} company={company} />

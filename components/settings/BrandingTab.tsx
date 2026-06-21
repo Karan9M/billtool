@@ -26,7 +26,7 @@ export function BrandingTab({
   onSignatureScaleChange,
 }: Props) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
+    <div className="grid gap-6 lg:grid-cols-2">
       <UploadCard
         title="Company Logo"
         description="Square PNG/JPG works best. Shown in the invoice header."
@@ -38,7 +38,7 @@ export function BrandingTab({
       <div className="space-y-6">
         <UploadCard
           title="Signature"
-          description="Transparent PNG (~400×150 px). Appears above the Authorised Signatory line."
+          description="Transparent PNG (~400x150 px). Appears above the Authorised Signatory."
           url={signatureUrl}
           field="signature_url"
           path="signature"
@@ -46,9 +46,11 @@ export function BrandingTab({
           bg="bg-[length:20px_20px] bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%),linear-gradient(45deg,#f1f5f9_25%,transparent_25%,transparent_75%,#f1f5f9_75%)] bg-[position:0_0,10px_10px]"
         />
         {signatureUrl && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Signature Scale</CardTitle>
+          <Card className="border-0 bg-card shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold text-foreground">
+                Signature Scale
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-muted-foreground">
@@ -62,19 +64,16 @@ export function BrandingTab({
                   step="0.1"
                   value={signatureScale || 1}
                   onChange={(e) => onSignatureScaleChange(Number(e.target.value))}
-                  className="w-full"
+                  className="w-full accent-primary"
                 />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>0.5x</span>
-                  <span className="font-medium">
+                  <span className="font-mono">0.5x</span>
+                  <span className="font-semibold text-foreground">
                     {(signatureScale || 1).toFixed(1)}x
                   </span>
-                  <span>2x</span>
+                  <span className="font-mono">2x</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Signature scale: <span className="font-mono">{(signatureScale || 1).toFixed(2)}</span>
-              </p>
             </CardContent>
           </Card>
         )}
@@ -155,27 +154,25 @@ function UploadCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+    <Card className="border-0 bg-card shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-bold text-foreground">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">{description}</p>
         <div
-          className={`flex h-44 w-full items-center justify-center overflow-hidden rounded-md border ${
-            bg ?? "bg-muted/40"
-          }`}
+          className={`flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border ${bg ?? "bg-muted/30"}`}
         >
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={url}
               alt={title}
-              className="max-h-full max-w-full object-contain p-3"
+              className="max-h-full max-w-full object-contain p-4"
             />
           ) : (
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <ImageOff className="size-7" />
+              <ImageOff className="size-8" />
               <span className="text-xs">No image uploaded</span>
             </div>
           )}
@@ -196,20 +193,21 @@ function UploadCard({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
-            size="lg"
+            size="sm"
           >
-            <Upload className="size-4" />
+            <Upload className="size-3.5" />
             {url ? "Replace" : "Upload"}
           </Button>
           {url ? (
             <Button
               type="button"
-              variant="destructive"
+              variant="outline"
               onClick={handleRemove}
               disabled={busy}
-              size="lg"
+              size="sm"
+              className="text-destructive hover:text-destructive"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-3.5" />
               Remove
             </Button>
           ) : null}

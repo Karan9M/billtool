@@ -81,56 +81,75 @@ export function SettingsTabs({ settings }: Props) {
         .update({ signature_scale: scale })
         .eq("id", 1);
       if (error) throw error;
-      toast.success("Signature scale updated");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Update failed";
       toast.error(msg);
     }
   }
 
+  const TABS = [
+    { value: "company", label: "Company" },
+    { value: "bank", label: "Bank" },
+    { value: "invoice", label: "Invoice Config" },
+    { value: "branding", label: "Branding" },
+  ];
+
   return (
-    <motion.form
+    <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      onSubmit={form.handleSubmit(onSubmit)}
+      transition={{ duration: 0.2 }}
+      className="mx-auto w-full max-w-4xl"
     >
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="company">Company</TabsTrigger>
-          <TabsTrigger value="bank">Bank</TabsTrigger>
-          <TabsTrigger value="invoice">Invoice Config</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-        </TabsList>
-        <TabsContent value="company" className="mt-6">
-          <CompanyTab form={form} />
-        </TabsContent>
-        <TabsContent value="bank" className="mt-6">
-          <BankTab form={form} />
-        </TabsContent>
-        <TabsContent value="invoice" className="mt-6">
-          <InvoiceConfigTab form={form} initialTemplate={settings.invoice_template} />
-        </TabsContent>
-        <TabsContent value="branding" className="mt-6">
-          <BrandingTab
-            logoUrl={logoUrl}
-            signatureUrl={signatureUrl}
-            signatureScale={signatureScale}
-            onLogoChange={setLogoUrl}
-            onSignatureChange={setSignatureUrl}
-            onSignatureScaleChange={handleSignatureScaleChange}
-          />
-        </TabsContent>
-      </Tabs>
-
-      {tab !== "branding" ? (
-        <div className="mt-8 flex justify-end">
-          <Button type="submit" disabled={saving} size="lg">
-            <Save className="size-4" />
-            {saving ? "Saving…" : "Save Changes"}
-          </Button>
+        <div className="mb-6 overflow-x-auto">
+          <TabsList className="inline-flex w-full min-w-0">
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className="text-xs whitespace-nowrap"
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
-      ) : null}
-    </motion.form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <TabsContent value="company" className="m-0">
+            <CompanyTab form={form} />
+          </TabsContent>
+          <TabsContent value="bank" className="m-0">
+            <BankTab form={form} />
+          </TabsContent>
+          <TabsContent value="invoice" className="m-0">
+            <InvoiceConfigTab form={form} initialTemplate={settings.invoice_template} />
+          </TabsContent>
+          <TabsContent value="branding" className="m-0">
+            <BrandingTab
+              logoUrl={logoUrl}
+              signatureUrl={signatureUrl}
+              signatureScale={signatureScale}
+              onLogoChange={setLogoUrl}
+              onSignatureChange={setSignatureUrl}
+              onSignatureScaleChange={handleSignatureScaleChange}
+            />
+          </TabsContent>
+
+          {tab !== "branding" ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-8 flex justify-end border-t border-border/50 pt-6"
+            >
+              <Button type="submit" disabled={saving} size="lg" className="shadow-xs">
+                <Save className="size-4" />
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </motion.div>
+          ) : null}
+        </form>
+      </Tabs>
+    </motion.div>
   );
 }

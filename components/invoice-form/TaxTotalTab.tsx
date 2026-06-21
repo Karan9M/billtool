@@ -32,13 +32,15 @@ export function TaxTotalTab({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Tax Configuration</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground">
+            Tax Configuration
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Tax Type</Label>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Tax Type</Label>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
@@ -46,6 +48,7 @@ export function TaxTotalTab({
                 onClick={() =>
                   setValue("tax_type", "CGST_SGST", { shouldDirty: true })
                 }
+                className="h-9 text-xs shadow-xs"
               >
                 CGST + SGST
               </Button>
@@ -55,24 +58,25 @@ export function TaxTotalTab({
                 onClick={() =>
                   setValue("tax_type", "IGST", { shouldDirty: true })
                 }
+                className="h-9 text-xs"
               >
                 IGST
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              CGST + SGST for intra-state Gujarat sales · IGST for inter-state.
+            <p className="text-[11px] text-muted-foreground">
+              CGST + SGST for intra-state (Gujarat) &middot; IGST for inter-state.
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Tax Rate</Label>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Tax Rate</Label>
             <Select
               value={String(taxRate)}
               onValueChange={(v) =>
                 setValue("tax_rate", Number(v), { shouldDirty: true })
               }
             >
-              <SelectTrigger className="h-10 w-full">
+              <SelectTrigger className="h-9 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -87,9 +91,11 @@ export function TaxTotalTab({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Live Totals</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground">
+            Totals
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5 font-mono text-sm">
           <Row label="Subtotal" value={totals.subtotal} />
@@ -112,14 +118,14 @@ export function TaxTotalTab({
             value={totals.roundOff}
             sign={totals.roundOff >= 0 ? "+" : ""}
           />
-          <div className="mt-2 flex items-center justify-between border-t pt-2">
-            <span className="text-base font-bold">TOTAL</span>
-            <span className="text-base font-bold text-blue-700">
+          <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+            <span className="text-base font-bold text-foreground">TOTAL</span>
+            <span className="text-base font-bold text-primary">
               ₹{formatCurrencyPlain(totals.total)}
             </span>
           </div>
-          <div className="mt-2 rounded-md bg-blue-50 p-2 text-xs text-blue-900">
-            <span className="font-bold">In words:</span>{" "}
+          <div className="mt-3 rounded-lg bg-primary/5 p-3 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">In words:</span>{" "}
             {numberToWords(totals.total)}
           </div>
         </CardContent>
@@ -140,9 +146,8 @@ function Row({
   return (
     <div className="flex items-center justify-between">
       <span className="text-muted-foreground">{label}</span>
-      <span>
-        {sign}
-        {formatCurrencyPlain(value)}
+      <span className="text-foreground">
+        {sign}{formatCurrencyPlain(value)}
       </span>
     </div>
   );

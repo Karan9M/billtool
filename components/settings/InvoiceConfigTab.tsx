@@ -56,16 +56,18 @@ export function InvoiceConfigTab({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice Template</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-bold text-foreground">
+            Invoice Template
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground">
             Choose the design template for your invoices.
           </p>
           <Select value={template} onValueChange={handleTemplateChange} disabled={saving}>
-            <SelectTrigger>
+            <SelectTrigger className="h-9 w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -79,9 +81,11 @@ export function InvoiceConfigTab({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice Numbering & Terms</CardTitle>
+      <Card className="border-0 bg-card shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-bold text-foreground">
+            Invoice Numbering & Terms
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -104,7 +108,7 @@ export function InvoiceConfigTab({
           </div>
           <p className="text-xs text-muted-foreground">
             Next invoice number will be one greater than this. Format:{" "}
-            <span className="font-mono">PREFIX-NNN-YYYY-YYYY</span>
+            <span className="font-mono text-foreground">PREFIX-NNN-YYYY-YYYY</span>
           </p>
           <TextAreaField
             name="terms"

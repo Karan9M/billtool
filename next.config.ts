@@ -3,8 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   turbopack: {
-    // @react-pdf/renderer's pdfkit references Node-only `canvas`/`encoding`
-    // that are unused in our build. Stub them so client/SSR bundles compile.
     resolveAlias: {
       canvas: { browser: "./empty-module.ts" },
       encoding: { browser: "./empty-module.ts" },

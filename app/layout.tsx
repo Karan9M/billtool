@@ -46,15 +46,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full antialiased",
+        "h-full antialiased [--scroll-mt:3.5rem]",
         outfit.variable,
         jetbrainsMono.variable,
         "font-sans"
       )}
+      suppressHydrationWarning
     >
+      <head />
       <body className="min-h-full bg-background text-foreground">
         <AppShell>{children}</AppShell>
-        <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" closeButton />
       </body>
     </html>
   );

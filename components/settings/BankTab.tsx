@@ -13,9 +13,11 @@ export function BankTab({
   const { register, formState } = form;
   const errors = formState.errors;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bank Details</CardTitle>
+    <Card className="border-0 bg-card shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-base font-bold text-foreground">
+          Bank Details
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">

@@ -34,17 +34,19 @@ export function TextField({
   const err = errors[name];
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} className="text-xs text-muted-foreground font-medium">
+        {label}
+      </Label>
       <Input
         id={name}
         type={type}
         placeholder={placeholder}
         aria-invalid={!!err}
-        className={cn("h-10", inputClassName)}
+        className={cn("h-9 text-sm bg-background", inputClassName)}
         {...register(name, type === "number" ? { valueAsNumber: true } : {})}
       />
       {err?.message ? (
-        <p className="text-xs text-destructive">{String(err.message)}</p>
+        <p className="text-xs text-destructive font-medium">{String(err.message)}</p>
       ) : null}
     </div>
   );
@@ -72,16 +74,19 @@ export function TextAreaField({
   const err = errors[name];
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name} className="text-xs text-muted-foreground font-medium">
+        {label}
+      </Label>
       <Textarea
         id={name}
         rows={rows}
         placeholder={placeholder}
         aria-invalid={!!err}
+        className="text-sm bg-background"
         {...register(name)}
       />
       {err?.message ? (
-        <p className="text-xs text-destructive">{String(err.message)}</p>
+        <p className="text-xs text-destructive font-medium">{String(err.message)}</p>
       ) : null}
     </div>
   );
