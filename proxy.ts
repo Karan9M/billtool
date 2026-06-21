@@ -7,8 +7,12 @@ const PUBLIC_ROUTES = ["/login", "/auth/callback"];
 export async function proxy(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request);
   const path = request.nextUrl.pathname;
+  const hasCode = request.nextUrl.searchParams.has("code");
+  const isAuthRedirect = hasCode || request.nextUrl.searchParams.has("error");
 
-  const isPublic = PUBLIC_ROUTES.some((r) => path.startsWith(r));
+  const isPublic =
+    PUBLIC_ROUTES.some((r) => path.startsWith(r)) || isAuthRedirect;
+
   const isApi = path.startsWith("/api");
 
   if (!user && !isPublic && !isApi) {
