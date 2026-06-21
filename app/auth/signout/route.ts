@@ -3,6 +3,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
+  const response = NextResponse.redirect(new URL("/login", request.url));
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -14,8 +16,8 @@ export async function GET(request: NextRequest) {
         setAll(
           cookiesToSet: { name: string; value: string; options: CookieOptions }[]
         ) {
-          for (const { name, value } of cookiesToSet) {
-            request.cookies.set(name, value);
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
           }
         },
       },
@@ -23,5 +25,5 @@ export async function GET(request: NextRequest) {
   );
 
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/login", request.url));
+  return response;
 }

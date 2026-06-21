@@ -8,6 +8,8 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("redirect") || "/";
 
   if (code) {
+    const response = NextResponse.redirect(`${origin}${next}`);
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,8 +21,8 @@ export async function GET(request: NextRequest) {
           setAll(
             cookiesToSet: { name: string; value: string; options: CookieOptions }[]
           ) {
-            for (const { name, value } of cookiesToSet) {
-              request.cookies.set(name, value);
+            for (const { name, value, options } of cookiesToSet) {
+              response.cookies.set(name, value, options);
             }
           },
         },
@@ -28,10 +30,8 @@ export async function GET(request: NextRequest) {
     );
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    if (!error) return response;
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Auth failed`);
+  return NextResponse.redirect(`${origin}/login?error=Auth+failed`);
 }
