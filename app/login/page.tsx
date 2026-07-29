@@ -1,50 +1,38 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = searchParams.get("redirect");
+  const redirectPath = redirect?.startsWith("/") ? redirect : "/";
+  const authError = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [error, setError] = useState(authError ?? "");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleGoogleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setBusy(true);
 
     const sb = getSupabaseBrowser();
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("redirect", redirectPath);
 
-    if (mode === "signin") {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-        setBusy(false);
-        return;
-      }
-      router.push(redirect);
-      router.refresh();
-    } else {
-      const { error } = await sb.auth.signUp({ email, password });
-      if (error) {
-        setError(error.message);
-        setBusy(false);
-        return;
-      }
-      setMode("signin");
-      setError("");
-      setPassword("");
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: callbackUrl.toString(),
+      },
+    });
+
+    if (error) {
+      setError(error.message);
       setBusy(false);
     }
   }
@@ -64,92 +52,24 @@ function LoginForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-xs text-muted-foreground font-medium">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="h-10 bg-background"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-xs text-muted-foreground font-medium">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-              className="h-10 bg-background"
-            />
-          </div>
-
-          {error && (
-            <p className="text-xs text-destructive font-medium">{error}</p>
-          )}
-
-          {mode === "signup" && (
-            <p className="text-xs text-muted-foreground">
-              A confirmation email will be sent. Check your inbox.
-            </p>
-          )}
+        <form onSubmit={handleGoogleSignIn} className="space-y-4">
+          {error && <p className="text-xs text-destructive font-medium">{error}</p>}
 
           <Button
             type="submit"
-            disabled={busy || !email || !password}
+            disabled={busy}
             className="w-full h-11 text-sm font-medium shadow-xs"
           >
             {busy ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                {mode === "signin" ? "Signing in..." : "Creating account..."}
+                Redirecting...
               </>
-            ) : mode === "signin" ? (
-              "Sign In"
             ) : (
-              "Create Account"
+              "Continue with Google"
             )}
           </Button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          {mode === "signin" ? (
-            <>
-              No account?{" "}
-              <button
-                type="button"
-                onClick={() => { setMode("signup"); setError(""); }}
-                className="font-medium text-primary hover:underline"
-              >
-                Sign Up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={() => { setMode("signin"); setError(""); }}
-                className="font-medium text-primary hover:underline"
-              >
-                Sign In
-              </button>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );

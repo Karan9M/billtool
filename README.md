@@ -8,6 +8,8 @@ A single-user, production-ready Next.js 16 PWA for generating GST-compliant tax 
 - Quick-fill presets for common CCTV items with HSN codes
 - Atomic invoice numbering via Postgres function (no race on concurrent saves)
 - Logo & signature upload to Supabase Storage
+- Bulk XLSX import for old GST sales/purchase bills with year-wise storage
+- Analytics view for month-wise sales, purchase, and profit trends
 - Installable PWA with shortcut to "New Invoice"
 
 ---
@@ -37,6 +39,11 @@ Open <http://localhost:3000>.
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - `anon`/`public` key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 4. Paste both into your `.env.local`.
+5. Go to **Authentication → Providers → Google** and enable Google login.
+6. In Supabase, set **Redirect URLs** to include:
+   - `http://localhost:3000/auth/callback` (local dev)
+   - `https://<your-production-domain>/auth/callback` (production)
+7. In Google Cloud OAuth credentials, add the Supabase callback URL shown in the provider setup page as an authorized redirect URI.
 
 The schema is **idempotent** — safe to re-run if you change something. RLS is intentionally **disabled** since this is a single-user app.
 
@@ -109,10 +116,14 @@ app/
     page.tsx               → All invoices list
     new/page.tsx           → New invoice (split: form + live preview)
     [id]/page.tsx          → Invoice detail (split: meta + PDF)
+  imports/page.tsx         → Bulk XLSX bill import workspace
+  analytics/page.tsx       → Sales/Purchase/Profit charts
   settings/page.tsx        → 4-tab settings (Company / Bank / Invoice / Branding)
   api/invoices/
     route.ts               → POST: create invoice (atomic numbering)
     [id]/route.ts          → PATCH status, DELETE
+  api/imports/gst-xlsx/    → POST: parse/upload XLSX bills into ledger table
+    route.ts
   manifest.ts              → PWA manifest (Next 16 native)
   icon.tsx                 → Dynamic favicon
 components/
@@ -123,9 +134,12 @@ components/
   invoices-list/           → Listing with search + status filter
   dashboard/               → Stat cards + recent invoices
   settings/                → 4 settings tabs
+  imports/                 → bulk import screen
+  analytics/               → charts dashboard
 lib/
   supabase/{client,server} → Lazy clients (throw helpful error if env missing)
   invoice-utils.ts         → numberToWords, calculateTotals, formatCurrency, etc.
+  imports/gst-xlsx.ts      → XLSX parser for GST bill sheets
   quick-fill-items.ts      → CCTV item presets + HSN code hints
   validators.ts            → zod schemas
 types/invoice.ts           → All TypeScript types
@@ -152,16 +166,16 @@ Concurrency check: open two `/invoices/new` tabs and submit them rapidly. They g
 
 ## 9. Tech stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack, React 19.2) |
-| Database | Supabase (Postgres + Storage) |
-| Styling | Tailwind CSS v4 |
-| UI primitives | shadcn/ui (radix-nova style) |
-| Forms | react-hook-form + zod |
-| Animation | framer-motion |
-| PDF | @react-pdf/renderer |
-| PWA | Native Next.js manifest + theme-color |
+| Layer         | Choice                                         |
+| ------------- | ---------------------------------------------- |
+| Framework     | Next.js 16 (App Router, Turbopack, React 19.2) |
+| Database      | Supabase (Postgres + Storage)                  |
+| Styling       | Tailwind CSS v4                                |
+| UI primitives | shadcn/ui (radix-nova style)                   |
+| Forms         | react-hook-form + zod                          |
+| Animation     | framer-motion                                  |
+| PDF           | @react-pdf/renderer                            |
+| PWA           | Native Next.js manifest + theme-color          |
 
 No `next-pwa` plugin is used because it relies on Webpack and Next 16's default bundler is Turbopack.
 
@@ -170,6 +184,16 @@ No `next-pwa` plugin is used because it relies on Webpack and Next 16's default 
 ## 10. Common gotchas
 
 - **"Supabase env vars are missing"** in dev → check `.env.local` exists with both `NEXT_PUBLIC_*` keys, then restart `bun run dev`.
+- **`Cannot find module 'xlsx'`** → run `npm install` / `bun install` to install the XLSX parser dependency.
 - **PDF preview blank in production** → most often caused by the `canvas`/`encoding` aliases not being applied. Verify the `turbopack.resolveAlias` block in [`next.config.ts`](next.config.ts).
 - **`row not found` on insert** → the seed didn't run. Re-run [`supabase/schema.sql`](supabase/schema.sql) (it's idempotent).
 - **Invoice numbers skipping** → if you submit a draft and then delete it, the counter doesn't decrement. This is intentional to preserve audit trail. To reset, edit `current_number` in **Settings → Invoice Config**.
+
+---
+
+## 11. Bulk GST import and analytics
+
+1. Re-run [`supabase/schema.sql`](supabase/schema.sql) to create `imported_ledger_entries`.
+2. Open **Bulk Imports** from the sidebar.
+3. Select **Sales Bills** or **Purchase Bills**, choose one or more `.xlsx` files, and import.
+4. Open **Analytics** to view year-filtered month-wise sales, purchases, and profit graphs.

@@ -174,3 +174,39 @@ on conflict (id) do update set public = true;
 -- Note: Storage policies can be configured in Supabase dashboard under:
 -- Storage → company-assets → Policies
 -- Allow public read and write for single-user app
+
+-- ----------------------------------------------------------------------------
+-- 6. Imported GST ledger entries (sales + purchases from XLSX upload)
+-- ----------------------------------------------------------------------------
+create table if not exists public.imported_ledger_entries (
+  id                uuid primary key default gen_random_uuid(),
+  source_file       text not null default '',
+  sheet_name        text not null default '',
+  bill_type         text not null check (bill_type in ('sale', 'purchase')),
+  financial_year    text not null default '',
+  invoice_no        text not null default '',
+  invoice_date      date,
+  party_name        text not null default '',
+  party_address     text not null default '',
+  items             jsonb not null default '[]'::jsonb,
+  subtotal          numeric(12,2) not null default 0,
+  cgst_amount       numeric(12,2) not null default 0,
+  sgst_amount       numeric(12,2) not null default 0,
+  igst_amount       numeric(12,2) not null default 0,
+  round_off         numeric(6,2) not null default 0,
+  total             numeric(12,2) not null default 0,
+  amount_in_words   text not null default '',
+  raw_payload       jsonb not null default '{}'::jsonb,
+  created_at        timestamptz not null default now()
+);
+
+alter table public.imported_ledger_entries disable row level security;
+
+create index if not exists imported_ledger_entries_fy_idx
+  on public.imported_ledger_entries (financial_year);
+create index if not exists imported_ledger_entries_bill_type_idx
+  on public.imported_ledger_entries (bill_type);
+create index if not exists imported_ledger_entries_invoice_date_idx
+  on public.imported_ledger_entries (invoice_date desc);
+create index if not exists imported_ledger_entries_created_at_idx
+  on public.imported_ledger_entries (created_at desc);

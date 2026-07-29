@@ -1,5 +1,6 @@
 export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled";
 export type TaxType = "CGST_SGST" | "IGST";
+export type BillType = "sale" | "purchase";
 
 export interface InvoiceItem {
   id: string;
@@ -72,6 +73,38 @@ export interface CompanySettings {
   invoice_template: string;
   terms: string;
   updated_at: string;
+}
+
+export interface ImportedLedgerItem {
+  id: string;
+  description: string;
+  hsn_code: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  amount: number;
+}
+
+export interface ImportedLedgerEntry {
+  id: string;
+  source_file: string;
+  sheet_name: string;
+  bill_type: BillType;
+  financial_year: string;
+  invoice_no: string;
+  invoice_date: string | null;
+  party_name: string;
+  party_address: string;
+  items: ImportedLedgerItem[];
+  subtotal: number;
+  cgst_amount: number;
+  sgst_amount: number;
+  igst_amount: number;
+  round_off: number;
+  total: number;
+  amount_in_words: string;
+  raw_payload: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface InvoiceTotals {

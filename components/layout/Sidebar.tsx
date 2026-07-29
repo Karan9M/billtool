@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   FilePlus2,
   Files,
+  Upload,
+  LineChart,
   Settings,
   Receipt,
   ChevronDown,
@@ -21,6 +23,8 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/invoices/new", label: "New Invoice", icon: FilePlus2, accent: true },
   { href: "/invoices", label: "Invoices", icon: Files },
+  { href: "/imports", label: "Bulk Imports", icon: Upload },
+  { href: "/analytics", label: "Analytics", icon: LineChart },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
