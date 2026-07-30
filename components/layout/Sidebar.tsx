@@ -41,20 +41,20 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div
-      className="flex h-screen w-full flex-col bg-sidebar text-sidebar-foreground"
+      className="flex h-screen w-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
       style={{ position: "sticky", top: 0 }}
     >
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-sidebar-primary shadow-sm">
+      <div className="flex h-20 items-center gap-3 px-5">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary shadow-[0_8px_18px_rgba(34,95,99,0.18)]">
           <Receipt className="size-5 text-sidebar-primary-foreground" />
         </div>
         <div className="leading-tight">
-          <div className="text-sm font-bold tracking-tight">BillTool</div>
-          <div className="text-[11px] text-sidebar-foreground/50">GST Invoicing</div>
+          <div className="text-[0.95rem] font-semibold tracking-[-0.035em]">BillTool</div>
+          <div className="mt-0.5 text-[11px] text-sidebar-foreground/50">GST invoicing</div>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 p-3 pt-4">
+      <nav className="flex-1 space-y-1 px-3 py-3">
         {NAV.map(({ href, label, icon: Icon, accent }) => {
           const active = isActive(href);
           return (
@@ -63,20 +63,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               href={href}
               onClick={onNavigate}
               className={cn(
-                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                "group relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-150 active:scale-[0.985]",
+                accent && !active
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_6px_14px_rgba(34,95,99,0.16)] hover:bg-sidebar-primary/90"
+                  : active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/65 hover:text-sidebar-foreground"
               )}
             >
-              {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary" />
-              )}
+              {active && <span className="absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-sidebar-primary" />}
               <Icon className={cn("size-4 shrink-0", active && "text-sidebar-primary")} />
               {label}
-              {accent && !active && (
-                <span className="ml-auto flex size-2 rounded-full bg-sidebar-primary/60" />
-              )}
+              {accent && !active && <FilePlus2 className="ml-auto size-3.5 opacity-75" />}
             </Link>
           );
         })}
@@ -84,7 +82,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <button
         onClick={() => setShowFy((v) => !v)}
-        className="mx-3 mb-1 flex items-center justify-between rounded-lg border border-sidebar-border/50 px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent/50"
+        className="mx-3 mb-2 flex items-center justify-between rounded-xl bg-secondary/55 px-3 py-2.5 text-left transition-colors duration-150 hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
       >
         <div>
           <div className="text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/40">

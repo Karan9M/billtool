@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Upload, FileSpreadsheet, CalendarRange } from "lucide-react";
+import { Upload, FileSpreadsheet, CalendarRange, AlertTriangle, Database, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { BillType, ImportedLedgerEntry } from "@/types/invoice";
 import { formatCurrency } from "@/lib/invoice-utils";
 
@@ -30,15 +41,17 @@ function getBillTypeLabel(type: BillType) {
 }
 
 export function ImportsPage({ entries, setupMessage }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const gstFileInputRef = useRef<HTMLInputElement>(null);
+  const calcFileInputRef = useRef<HTMLInputElement>(null);
   const [billType, setBillType] = useState<BillType>("sale");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [gstFiles, setGstFiles] = useState<File[]>([]);
+  const [calcFiles, setCalcFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState<"gst" | "calc" | "clear" | null>(null);
 
   const yearSummary = useMemo(() => {
     const map = new Map<
       string,
-      { year: string; sales: number; purchases: number; salesCount: number; purchasesCount: number }
+      { year: string; sales: number; purchases: number; salesCount: number; purchasesCount: number; profit: number }
     >();
 
     for (const entry of entries) {
@@ -48,6 +61,7 @@ export function ImportsPage({ entries, setupMessage }: Props) {
         purchases: 0,
         salesCount: 0,
         purchasesCount: 0,
+        profit: 0,
       };
 
       if (entry.bill_type === "sale") {
@@ -57,6 +71,7 @@ export function ImportsPage({ entries, setupMessage }: Props) {
         row.purchases += Number(entry.total);
         row.purchasesCount += 1;
       }
+      row.profit = row.sales - row.purchases;
       map.set(entry.financial_year, row);
     }
 
@@ -65,17 +80,17 @@ export function ImportsPage({ entries, setupMessage }: Props) {
 
   const latestEntries = useMemo(() => entries.slice(0, 20), [entries]);
 
-  async function handleUpload() {
-    if (selectedFiles.length === 0) {
+  async function handleGstUpload() {
+    if (gstFiles.length === 0) {
       toast.error("Select one or more .xlsx files first.");
       return;
     }
 
-    setBusy(true);
+    setBusy("gst");
     try {
       const formData = new FormData();
       formData.set("billType", billType);
-      for (const file of selectedFiles) formData.append("files", file);
+      for (const file of gstFiles) formData.append("files", file);
 
       const response = await fetch("/api/imports/gst-xlsx", {
         method: "POST",
@@ -100,23 +115,114 @@ export function ImportsPage({ entries, setupMessage }: Props) {
         toast.message(`Skipped: ${payload.skippedFiles?.join(", ")}`);
       }
 
-      setSelectedFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setGstFiles([]);
+      if (gstFileInputRef.current) gstFileInputRef.current.value = "";
       window.location.reload();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Import failed");
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  }
+
+  async function handleCalcUpload() {
+    if (calcFiles.length === 0) {
+      toast.error("Select a .xls or .xlsx file first.");
+      return;
+    }
+
+    setBusy("calc");
+    try {
+      const formData = new FormData();
+      for (const file of calcFiles) formData.append("files", file);
+
+      const response = await fetch("/api/imports/calculation-xls", {
+        method: "POST",
+        body: formData,
+      });
+      const payload = (await response.json()) as {
+        error?: string;
+        inserted?: number;
+        skippedFiles?: string[];
+        years?: string[];
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Import failed");
+      }
+
+      toast.success(`Imported ${payload.inserted ?? 0} entries from CALCULATION.xls.`);
+
+      if ((payload.skippedFiles?.length ?? 0) > 0) {
+        toast.message(`Skipped: ${payload.skippedFiles?.join(", ")}`);
+      }
+
+      setCalcFiles([]);
+      if (calcFileInputRef.current) calcFileInputRef.current.value = "";
+      window.location.reload();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Import failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleClear() {
+    setBusy("clear");
+    try {
+      const response = await fetch("/api/imports/clear", { method: "DELETE" });
+      const payload = (await response.json()) as { error?: string; deleted?: number };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Clear failed");
+      }
+
+      toast.success(`Deleted ${payload.deleted ?? 0} entries.`);
+      window.location.reload();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Clear failed");
+    } finally {
+      setBusy(null);
     }
   }
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4 md:p-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Bulk GST Imports</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Upload old .xlsx GST bills in bulk and store them year-wise for analytics.
-        </p>
+      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Bulk GST Imports</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Upload GST invoice .xlsx files or a CALCULATION.xls summary sheet.
+          </p>
+        </div>
+        {entries.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="size-4" />
+                Clear All Data
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear all imported data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will delete all {entries.length} imported entries. This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleClear}
+                  disabled={busy === "clear"}
+                >
+                  {busy === "clear" ? "Deleting..." : "Delete All"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </header>
 
       {setupMessage ? (
@@ -125,12 +231,17 @@ export function ImportsPage({ entries, setupMessage }: Props) {
         </div>
       ) : null}
 
-      <div className="mb-8 grid gap-4 lg:grid-cols-3">
-        <Card className="border-0 shadow-sm lg:col-span-2">
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <Card className="border-0 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-sm font-bold">Upload XLSX bills</CardTitle>
+            <CardTitle className="text-sm font-bold">
+              <FileSpreadsheet className="inline size-4" /> Upload GST Invoice XLSX
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Upload individual GST invoice .xlsx files (SAI COMMUNICATION SYSTEM format).
+            </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Bill Type</p>
@@ -152,39 +263,84 @@ export function ImportsPage({ entries, setupMessage }: Props) {
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">XLSX Files</p>
                 <input
-                  ref={fileInputRef}
+                  ref={gstFileInputRef}
                   type="file"
                   accept=".xlsx"
                   multiple
-                  onChange={(e) => setSelectedFiles(Array.from(e.target.files ?? []))}
+                  onChange={(e) => setGstFiles(Array.from(e.target.files ?? []))}
                   className="block h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                 />
               </div>
             </div>
 
-            {selectedFiles.length > 0 && (
+            {gstFiles.length > 0 && (
               <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-                Selected ({selectedFiles.length}):
+                Selected ({gstFiles.length}):
                 <div className="mt-1 space-y-1">
-                  {selectedFiles.slice(0, 6).map((file) => (
+                  {gstFiles.slice(0, 6).map((file) => (
                     <div key={file.name} className="truncate">
                       • {file.name}
                     </div>
                   ))}
-                  {selectedFiles.length > 6 && (
-                    <div>• +{selectedFiles.length - 6} more files</div>
+                  {gstFiles.length > 6 && (
+                    <div>• +{gstFiles.length - 6} more files</div>
                   )}
                 </div>
               </div>
             )}
 
-            <Button onClick={handleUpload} disabled={busy || selectedFiles.length === 0}>
+            <Button onClick={handleGstUpload} disabled={busy === "gst" || gstFiles.length === 0}>
               <Upload className="size-4" />
-              {busy ? "Importing..." : "Import Files"}
+              {busy === "gst" ? "Importing..." : "Import XLSX Files"}
             </Button>
           </CardContent>
         </Card>
 
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-sm font-bold">
+              <Database className="inline size-4" /> Upload CALCULATION.xls
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Upload the historical summary sheet (CALCULATION.xls) with sales/purchase data
+              organized month-wise.
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">CALC File</p>
+              <input
+                ref={calcFileInputRef}
+                type="file"
+                accept=".xls,.xlsx"
+                multiple
+                onChange={(e) => setCalcFiles(Array.from(e.target.files ?? []))}
+                className="block h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
+            {calcFiles.length > 0 && (
+              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+                Selected ({calcFiles.length}):
+                <div className="mt-1 space-y-1">
+                  {calcFiles.slice(0, 3).map((file) => (
+                    <div key={file.name} className="truncate">
+                      • {file.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button onClick={handleCalcUpload} disabled={busy === "calc" || calcFiles.length === 0}>
+              <Database className="size-4" />
+              {busy === "calc" ? "Importing..." : "Import CALCULATION.xls"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-3">
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-bold">Import Stats</CardTitle>
@@ -208,10 +364,8 @@ export function ImportsPage({ entries, setupMessage }: Props) {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="mb-8 grid gap-4 lg:grid-cols-2">
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-bold">Year-wise Summary</CardTitle>
           </CardHeader>
@@ -236,45 +390,9 @@ export function ImportsPage({ entries, setupMessage }: Props) {
                       <div className="text-muted-foreground">
                         Purchases {formatCurrency(row.purchases)} ({row.purchasesCount})
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold">Latest Imported Bills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {latestEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No imported bills yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {latestEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-center justify-between rounded-lg border bg-background px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <FileSpreadsheet className="size-4 text-primary" />
-                        <span className="truncate">{entry.invoice_no || entry.source_file}</span>
+                      <div className={row.profit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                        Profit {formatCurrency(row.profit)}
                       </div>
-                      <div className="truncate text-xs text-muted-foreground">
-                        {getBillTypeLabel(entry.bill_type)} • {entry.party_name || "Unknown party"} •{" "}
-                        {entry.invoice_date
-                          ? format(new Date(entry.invoice_date), "dd MMM yyyy")
-                          : "No date"}
-                      </div>
-                    </div>
-                    <div className="text-right text-xs">
-                      <div className="font-mono font-semibold text-foreground">
-                        {formatCurrency(Number(entry.total))}
-                      </div>
-                      <div className="font-mono text-muted-foreground">{entry.financial_year}</div>
                     </div>
                   </div>
                 ))}
@@ -283,6 +401,51 @@ export function ImportsPage({ entries, setupMessage }: Props) {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-sm font-bold">Latest Imported Bills</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {latestEntries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No imported bills yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {latestEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center justify-between rounded-lg border bg-background px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <FileSpreadsheet className="size-4 text-primary" />
+                      <span className="truncate">{entry.invoice_no || entry.source_file}</span>
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {getBillTypeLabel(entry.bill_type)} • {entry.party_name || "Unknown"} •{" "}
+                      {entry.invoice_date
+                        ? format(new Date(entry.invoice_date), "dd MMM yyyy")
+                        : "No date"}
+                      {entry.subtotal > 0 && ` • Gross: ${formatCurrency(Number(entry.subtotal))}`}
+                    </div>
+                  </div>
+                  <div className="text-right text-xs">
+                    <div className="font-mono font-semibold text-foreground">
+                      {formatCurrency(Number(entry.total))}
+                    </div>
+                    <div className="font-mono text-muted-foreground">{entry.financial_year}</div>
+                    {Number(entry.cgst_amount) > 0 && entry.cgst_amount && (
+                      <div className="text-muted-foreground">
+                        GST: {formatCurrency(Number(entry.cgst_amount) + Number(entry.sgst_amount))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

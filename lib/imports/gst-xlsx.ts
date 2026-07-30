@@ -103,6 +103,21 @@ function parseDateCell(value: unknown): string | null {
   return null;
 }
 
+const LABEL_KEYWORDS = new Set([
+  "invoice", "date", "buyer", "delivery", "despatch", "destination",
+  "gross", "sgst", "cgst", "igst", "round", "total", "amount",
+  "words", "hsn", "quantity", "rate", "sr.", "description",
+]);
+
+function isLabel(value: string, needle: string): boolean {
+  const lower = value.toLowerCase();
+  if (lower === needle) return true;
+  for (const keyword of LABEL_KEYWORDS) {
+    if (lower.includes(keyword) && !needle.includes(keyword)) return true;
+  }
+  return false;
+}
+
 function findValueNearLabel(rows: Matrix, label: string): unknown {
   const needle = label.toLowerCase();
   for (let r = 0; r < rows.length; r += 1) {
@@ -111,13 +126,20 @@ function findValueNearLabel(rows: Matrix, label: string): unknown {
       const cellText = normalizeCell(row[c]).toLowerCase();
       if (!cellText.includes(needle)) continue;
 
+      const nextRow = rows[r + 1] ?? [];
+
+      for (let c2 = Math.max(0, c - 1); c2 <= c + 1; c2 += 1) {
+        const candidate = nextRow[c2];
+        const text = normalizeCell(candidate);
+        if (text && !isLabel(text, needle)) return candidate;
+      }
+
       for (let c2 = c + 1; c2 < row.length; c2 += 1) {
         const candidate = row[c2];
         const text = normalizeCell(candidate);
-        if (text && !text.toLowerCase().includes(needle)) return candidate;
+        if (text && !isLabel(text, needle)) return candidate;
       }
 
-      const nextRow = rows[r + 1] ?? [];
       for (let c2 = c; c2 <= c + 2; c2 += 1) {
         const candidate = nextRow[c2];
         const text = normalizeCell(candidate);

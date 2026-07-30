@@ -40,14 +40,14 @@ export interface InvoicePDFData {
 }
 
 const COLORS = {
-  primary: "#1e40af",
-  primaryLight: "#dbeafe",
-  primaryDark: "#0f1829",
-  text: "#0f172a",
-  textMuted: "#475569",
-  border: "#cbd5e1",
-  borderLight: "#e2e8f0",
-  rowAlt: "#f8fafc",
+  primary: "#24766e",
+  primaryLight: "#e5f6ed",
+  primaryDark: "#183d42",
+  text: "#1f3740",
+  textMuted: "#5f757d",
+  border: "#cddedb",
+  borderLight: "#e3eeeb",
+  rowAlt: "#f5faf8",
   white: "#ffffff",
 };
 
